@@ -65,6 +65,7 @@ $$L = E[(r + \gamma \max_{a'} Q(s', a'; \theta^-) - Q(s, a; \theta))^2]$$
 - **ε-greedy 探索**：以概率 ε 随机选择动作，ε 随训练逐步衰减
 
 DQN 超参数设置：
+
 | 参数 | 值 | 说明 |
 |------|-----|------|
 | learning_rate | 5e-4 | 学习率 |
@@ -85,6 +86,7 @@ $$L^{CLIP} = E[\min(r_t(\theta) A_t, \text{clip}(r_t(\theta), 1-\epsilon, 1+\eps
 其中 $r_t(\theta) = \frac{\pi_\theta(a_t|s_t)}{\pi_{\theta_{old}}(a_t|s_t)}$ 是新旧策略的概率比，$A_t$ 是优势函数估计。
 
 PPO 超参数设置：
+
 | 参数 | 值 | 说明 |
 |------|-----|------|
 | learning_rate | 3e-4 | 学习率 |
