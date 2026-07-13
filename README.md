@@ -66,11 +66,11 @@ task1_cartpole/
 #### 1. 克隆或下载项目
 
 ```bash
-# 方式1：克隆仓库（替换为实际仓库地址）
-git clone https://github.com/your-username/cartpole-rl-control.git
-cd cartpole-rl-control/task1_cartpole
+# 克隆仓库
+git clone https://github.com/zhaihuahua78/cartpole--.git
+cd cartpole--
 
-# 方式2：直接下载ZIP文件并解压
+# 或者直接下载ZIP文件并解压
 ```
 
 #### 2. 创建虚拟环境（推荐）
