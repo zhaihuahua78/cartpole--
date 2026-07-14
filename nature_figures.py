@@ -1,442 +1,314 @@
 """
-Nature-style scientific figures for CartPole RL report.
-Strictly follows Nature期刊 figure conventions:
-- Black/white/gray base + single accent color
-- No chartjunk, no redundant decorations
-- Axis labels capitalized, no legend border
-- Each figure standalone with its own context
+Nature 期刊风格数据图绘制脚本。
+
+风格规范：
+- 黑白灰基底 + 单色点缀（深蓝 #2166AC / 暗红 #B2182B）
+- 去除所有冗余装饰（上/右边框、网格、背景色）
+- 坐标轴标题首字母大写（如 "Episode" 而非 "回合"）
+- 图例无边框
+- 刻度朝外
+- 每图独立保存，对应报告特定章节
 """
-import json, os, numpy as np
-import matplotlib as mpl
+
+import json
+import numpy as np
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
+from matplotlib import rcParams
+import os
 
-# ============ Nature journal style rcParams ============
-NATURE_GRAY = '#4D4D4D'       # dark gray for text/axes
-ACCENT_BLUE = '#2166AC'       # single accent color (Nature blue)
-ACCENT_RED  = '#B2182B'       # secondary accent
-LIGHT_GRAY = '#E0E0E0'        # grid lines
-WHITE = '#FFFFFF'
-
-mpl.rcParams.update({
-    'font.family': 'sans-serif',
-    'font.sans-serif': ['Arial', 'Helvetica', 'DejaVu Sans'],
-    'font.size': 8,
-    'axes.labelsize': 9,
-    'axes.titlesize': 10,
-    'xtick.labelsize': 7,
-    'ytick.labelsize': 7,
-    'legend.fontsize': 7,
-    'figure.dpi': 300,
-    'savefig.dpi': 300,
-    'savefig.bbox': 'tight',
-    'savefig.pad_inches': 0.05,
-    'axes.linewidth': 0.6,
-    'axes.edgecolor': NATURE_GRAY,
-    'xtick.major.width': 0.5,
-    'ytick.major.width': 0.5,
-    'xtick.major.size': 3,
-    'ytick.major.size': 3,
-    'xtick.color': NATURE_GRAY,
-    'ytick.color': NATURE_GRAY,
-    'text.color': NATURE_GRAY,
-    'axes.labelcolor': NATURE_GRAY,
-    'legend.edgecolor': 'none',
-    'legend.frameon': False,
-    'legend.borderpad': 0.2,
+# ── 全局样式 ──────────────────────────────────────────────
+rcParams.update({
+    "font.family": "serif",
+    "font.serif": ["DejaVu Serif", "Times New Roman", "SimSun"],
+    "font.size": 8,
+    "axes.linewidth": 0.8,
+    "axes.spines.top": False,
+    "axes.spines.right": False,
+    "xtick.direction": "out",
+    "ytick.direction": "out",
+    "xtick.major.size": 3,
+    "ytick.major.size": 3,
+    "xtick.major.width": 0.6,
+    "ytick.major.width": 0.6,
+    "legend.frameon": False,
+    "legend.fontsize": 7,
+    "figure.dpi": 200,
+    "savefig.bbox": "tight",
+    "savefig.pad_inches": 0.15,
 })
 
-def smooth(data, w=20):
-    if len(data) < w: return data
-    return np.convolve(data, np.ones(w)/w, mode='valid')
+# ── 颜色 ──────────────────────────────────────────────────
+C_BLUE   = "#2166AC"   # 深蓝（主色）
+C_RED    = "#B2182B"   # 暗红（次要色）
+C_GRAY   = "#666666"   # 灰色（文本/标注）
+C_LGRAY  = "#CCCCCC"   # 浅灰
+C_BLACK  = "#000000"   # 黑色
 
-def nature_clean(ax):
-    """Strip the axes down to Nature style: only left+bottom spines, thin frames."""
-    for spine in ['top', 'right']:
-        ax.spines[spine].set_visible(False)
-    ax.spines['left'].set_linewidth(0.6)
-    ax.spines['bottom'].set_linewidth(0.6)
-    ax.spines['left'].set_color(NATURE_GRAY)
-    ax.spines['bottom'].set_color(NATURE_GRAY)
-    ax.tick_params(colors=NATURE_GRAY)
+RESULTS_DIR = "results_task"
 
-# ========== FIGURE 1: PPO Training Curve (Section 2.2) ==========
+def _save(fig, name):
+    """同时保存 PDF 和 PNG"""
+    fig.savefig(f"{RESULTS_DIR}/{name}.pdf")
+    fig.savefig(f"{RESULTS_DIR}/{name}.png", dpi=200)
+    plt.close()
+    print(f"[OK] {name}")
+
+
+def _smooth(data, window=20):
+    """移动平均平滑"""
+    if len(data) < window:
+        return data
+    kernel = np.ones(window) / window
+    return np.convolve(data, kernel, mode="valid")
+
+
 def fig1_ppo_training():
-    with open('results/ppo_train_log.json') as f:
-        rewards = json.load(f)['episode_rewards']
-    
-    fig, ax = plt.subplots(figsize=(4.2, 3.0), facecolor=WHITE)
-    ax.set_facecolor(WHITE)
-    nature_clean(ax)
-    
-    episodes = np.arange(1, len(rewards) + 1)
-    
-    # raw data as faint gray dots
-    step = max(1, len(rewards)//400)
-    ax.scatter(episodes[::step], rewards[::step], color='#B0B0B0', s=2, alpha=0.5, rasterized=True)
-    
-    # smoothed line in accent blue
-    sm = smooth(rewards, 10)
-    ax.plot(range(10, len(rewards)+1), sm, color=ACCENT_BLUE, linewidth=1.2)
-    
-    # solve threshold
-    ax.axhline(y=475, color=NATURE_GRAY, linestyle='--', linewidth=0.5, alpha=0.6)
-    ax.text(len(rewards)*0.98, 480, 'Solve threshold', fontsize=6, color=NATURE_GRAY, ha='right', va='bottom')
-    
-    ax.set_xlabel('Episode')
-    ax.set_ylabel('Reward')
-    ax.set_ylim(0, 550)
-    ax.set_xlim(0, len(rewards))
-    
-    # annotation
-    ax.annotate(f'First solved: episode {next(i for i,r in enumerate(rewards) if r>=475)}',
-                xy=(next(i for i,r in enumerate(rewards) if r>=475), 475),
-                xytext=(next(i for i,r in enumerate(rewards) if r>=475)+80, 380),
-                arrowprops=dict(arrowstyle='->', color=NATURE_GRAY, lw=0.6),
-                fontsize=6, color=NATURE_GRAY)
-    
-    plt.tight_layout(pad=0.3)
-    for fmt in ['png','pdf']:
-        fig.savefig(f'results/fig1_ppo_training.{fmt}', dpi=300, facecolor=WHITE)
-    plt.close()
-    print('[OK] fig1_ppo_training')
-
-# ========== FIGURE 2: DQN Training Curve (Section 2.2) ==========
-def fig2_dqn_training():
-    with open('results/dqn_train_log.json') as f:
-        rewards = json.load(f)['episode_rewards']
-    
-    fig, ax = plt.subplots(figsize=(4.2, 3.0), facecolor=WHITE)
-    ax.set_facecolor(WHITE)
-    nature_clean(ax)
-    
-    episodes = np.arange(1, len(rewards) + 1)
-    step = max(1, len(rewards)//400)
-    ax.scatter(episodes[::step], rewards[::step], color='#B0B0B0', s=2, alpha=0.5, rasterized=True)
-    
-    sm = smooth(rewards, 20)
-    ax.plot(range(20, len(rewards)+1), sm, color=ACCENT_RED, linewidth=1.2)
-    
-    # mark solved episodes
-    solved_eps = [i+1 for i,r in enumerate(rewards) if r >= 475]
-    for ep in solved_eps:
-        ax.axvline(x=ep, color=ACCENT_RED, linewidth=0.4, alpha=0.3)
-    
-    ax.axhline(y=475, color=NATURE_GRAY, linestyle='--', linewidth=0.5, alpha=0.6)
-    ax.text(len(rewards)*0.98, 480, 'Solve threshold', fontsize=6, color=NATURE_GRAY, ha='right', va='bottom')
-    
-    ax.set_xlabel('Episode')
-    ax.set_ylabel('Reward')
-    ax.set_ylim(0, 550)
-    ax.set_xlim(0, len(rewards))
-    
-    # info inset
-    txt = f'Episodes: {len(rewards)}\nMax reward: {max(rewards):.0f}\nSolved: {len(solved_eps)} times\nLast 100 mean: {np.mean(rewards[-100:]):.0f}'
-    ax.text(0.03, 0.97, txt, transform=ax.transAxes, fontsize=6, color=NATURE_GRAY,
-            va='top', family='monospace')
-    
-    plt.tight_layout(pad=0.3)
-    for fmt in ['png','pdf']:
-        fig.savefig(f'results/fig2_dqn_training.{fmt}', dpi=300, facecolor=WHITE)
-    plt.close()
-    print('[OK] fig2_dqn_training')
-
-# ========== FIGURE 3: Method Comparison (Section 3.3) ==========
-def fig3_method_comparison():
-    with open('results/baseline_comparison.json') as f:
+    """图1：PPO训练奖励曲线（对应报告2.2节）"""
+    with open(f"{RESULTS_DIR}/ppo_train_log.json") as f:
         data = json.load(f)
-    
-    keys = ['random', 'lqr', 'rule_based', 'dqn', 'ppo']
-    labels = ['Random', 'LQR', 'Rule-based', 'DQN', 'PPO']
-    means = [data[k]['mean_reward'] for k in keys]
-    stds  = [data[k].get('std_reward', 0) for k in keys]
-    
-    fig, ax = plt.subplots(figsize=(4.2, 3.0), facecolor=WHITE)
-    ax.set_facecolor(WHITE)
-    nature_clean(ax)
-    
+
+    rewards = data["episode_rewards"]
+    episodes = np.arange(1, len(rewards) + 1)
+    smoothed = _smooth(rewards, window=10)
+
+    fig, ax = plt.subplots(figsize=(4.5, 3))
+
+    # 原始数据（浅色散点）
+    ax.scatter(episodes, rewards, s=1.5, color=C_BLUE, alpha=0.25, linewidth=0,
+               label="Reward per episode")
+
+    # 平滑曲线
+    ax.plot(np.arange(10, len(rewards) + 1), smoothed,
+            color=C_BLUE, linewidth=1.2, label="Moving average (w=10)")
+
+    # 满分阈值线
+    ax.axhline(y=475, color=C_GRAY, linestyle="--", linewidth=0.7, alpha=0.6)
+    ax.text(len(rewards) * 0.72, 483, "Solved (475)", fontsize=6.5,
+            color=C_GRAY, fontstyle="italic")
+
+    # 标注首次满分
+    first_solved = None
+    for i, r in enumerate(rewards):
+        if r >= 475:
+            first_solved = i + 1
+            break
+    if first_solved:
+        ax.axvline(x=first_solved, color=C_RED, linestyle=":", linewidth=0.7, alpha=0.5)
+        ax.text(first_solved + 8, 100, f"Episode {first_solved}",
+                fontsize=6.5, color=C_RED, fontstyle="italic")
+
+    ax.set_xlabel("Episode", fontsize=8)
+    ax.set_ylabel("Reward", fontsize=8)
+    ax.set_title("Figure 1 | PPO training curve", fontsize=9, fontweight="bold", pad=8)
+
+    ax.set_xlim(0, len(rewards) + 5)
+    ax.set_ylim(-50, 550)
+    ax.legend(loc="lower right")
+
+    _save(fig, "fig1_ppo_training")
+
+
+def fig2_dqn_training():
+    """图2：DQN训练奖励曲线——展示灾难性遗忘（对应报告2.3节）"""
+    with open(f"{RESULTS_DIR}/dqn_train_log.json") as f:
+        data = json.load(f)
+
+    rewards = data["episode_rewards"]
+    episodes = np.arange(1, len(rewards) + 1)
+    smoothed = _smooth(rewards, window=50)
+
+    fig, ax = plt.subplots(figsize=(5.5, 3))
+
+    # 原始数据
+    ax.scatter(episodes, rewards, s=0.5, color=C_GRAY, alpha=0.15, linewidth=0)
+
+    # 平滑曲线
+    ax.plot(np.arange(50, len(rewards) + 1), smoothed,
+            color=C_RED, linewidth=1.0, label="Moving average (w=50)")
+
+    # 标注三个阶段
+    phases = [
+        (0, 1200, "Exploration", "#888888"),
+        (1200, 2200, "Learning", C_BLUE),
+        (2200, len(rewards), "Catastrophic\nforgetting", C_RED),
+    ]
+    for start, end, label, color in phases:
+        mid = (start + end) / 2
+        y_pos = 420 if label == "Learning" else 380
+        ax.annotate(label, xy=(mid, y_pos), fontsize=6.5, color=color,
+                    ha="center", fontstyle="italic",
+                    arrowprops=dict(arrowstyle="-", color=color, lw=0.5))
+
+    # 峰值标注
+    peak_idx = int(np.argmax(rewards))
+    peak_val = max(rewards)
+    ax.scatter([peak_idx + 1], [peak_val], s=30, color=C_RED, zorder=5,
+               edgecolors="white", linewidth=0.5)
+    ax.annotate(f"Peak: {peak_val:.0f}", xy=(peak_idx + 1, peak_val),
+                xytext=(peak_idx - 800, peak_val + 60),
+                fontsize=6.5, color=C_RED, ha="center",
+                arrowprops=dict(arrowstyle="->", color=C_RED, lw=0.6))
+
+    # 满分线
+    ax.axhline(y=475, color=C_GRAY, linestyle="--", linewidth=0.7, alpha=0.5)
+    ax.text(100, 482, "Solved (475)", fontsize=6, color=C_GRAY, fontstyle="italic")
+
+    ax.set_xlabel("Episode", fontsize=8)
+    ax.set_ylabel("Reward", fontsize=8)
+    ax.set_title("Figure 2 | DQN training curve — catastrophic forgetting",
+                 fontsize=9, fontweight="bold", pad=8)
+
+    ax.set_xlim(-50, len(rewards) + 50)
+    ax.set_ylim(-50, 550)
+    ax.legend(loc="upper left")
+
+    _save(fig, "fig2_dqn_training")
+
+
+def fig3_method_comparison():
+    """图3：五种控制方法性能对比（对应报告3.3节）"""
+    with open(f"{RESULTS_DIR}/baseline_comparison.json") as f:
+        baseline = json.load(f)
+    with open(f"{RESULTS_DIR}/rl_eval.json") as f:
+        rl = json.load(f)
+
+    # 数据准备
+    labels = ["Random", "LQR", "Rule-\nbased", "DQN", "PPO"]
+    means = [
+        baseline["random"]["mean_reward"],
+        baseline["lqr"]["mean_reward"],
+        baseline["rule_based"]["mean_reward"],
+        rl["dqn"]["mean_reward"],
+        rl["ppo"]["mean_reward"],
+    ]
+    errors = [0, 0, 0, rl["dqn"]["std_reward"], rl["ppo"]["std_reward"]]
+    colors = [C_GRAY, "#999999", "#555555", C_RED, C_BLUE]
+    hatch = ["", "", "", "//", ""]
+
+    fig, ax = plt.subplots(figsize=(4.5, 3.5))
+
     x = np.arange(len(labels))
-    # All gray except PPO in blue
-    bar_colors = ['#9E9E9E']*4 + [ACCENT_BLUE]
-    
-    bars = ax.bar(x, means, 0.55, color=bar_colors, edgecolor=WHITE, linewidth=0.5, zorder=3)
-    ax.errorbar(x, means, yerr=stds, fmt='none', color=NATURE_GRAY, capsize=3, lw=0.8, zorder=4)
-    
-    for bar, m in zip(bars, means):
-        ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 15,
-                f'{m:.0f}', ha='center', fontsize=7, color=NATURE_GRAY)
-    
-    ax.axhline(y=475, color=NATURE_GRAY, linestyle='--', linewidth=0.5, alpha=0.6)
-    ax.text(4.5, 480, 'Solve', fontsize=6, color=NATURE_GRAY, ha='right')
-    
+    bars = ax.bar(x, means, width=0.55, color=colors, edgecolor=C_BLACK,
+                  linewidth=0.5, alpha=0.85)
+
+    # 误差棒
+    for i, (bar, err) in enumerate(zip(bars, errors)):
+        if err > 0:
+            ax.errorbar(bar.get_x() + bar.get_width() / 2, bar.get_height(),
+                        yerr=err, fmt="none", color=C_BLACK, capsize=2.5,
+                        capthick=0.6, linewidth=0.6)
+
+    # 数值标注
+    for bar, mean in zip(bars, means):
+        y_pos = bar.get_height() + 15
+        if mean < 10:
+            y_pos = bar.get_height() + 8
+        ax.text(bar.get_x() + bar.get_width() / 2, y_pos,
+                f"{mean:.1f}", ha="center", va="bottom", fontsize=7, color=C_BLACK)
+
+    # 满分线
+    ax.axhline(y=475, color=C_GRAY, linestyle="--", linewidth=0.7, alpha=0.5)
+    ax.text(3.8, 482, "Solved (475)", fontsize=6.5, color=C_GRAY, fontstyle="italic")
+
     ax.set_xticks(x)
     ax.set_xticklabels(labels, fontsize=7)
-    ax.set_ylabel('Mean reward')
+    ax.set_ylabel("Mean reward", fontsize=8)
+    ax.set_title("Figure 3 | Control method comparison",
+                 fontsize=9, fontweight="bold", pad=8)
     ax.set_ylim(0, 580)
-    ax.yaxis.set_major_locator(ticker.MultipleLocator(100))
-    
-    plt.tight_layout(pad=0.3)
-    for fmt in ['png','pdf']:
-        fig.savefig(f'results/fig3_method_comparison.{fmt}', dpi=300, facecolor=WHITE)
-    plt.close()
-    print('[OK] fig3_method_comparison')
 
-# ========== FIGURE 4: Before/After Training (Section 3.2) ==========
-def fig4_before_after():
-    import gymnasium as gym
-    from stable_baselines3 import PPO, DQN
-    
-    env = gym.make('CartPole-v1')
-    pre = []
-    for i in range(20):
-        o, _ = env.reset(seed=i); d = False; r = 0
-        while not d:
-            a = env.action_space.sample(); o, rr, t, tr, _ = env.step(a); d = t or tr; r += rr
-        pre.append(r)
-    env.close()
-    
-    post = []
-    for algo, path in [('dqn','models/dqn_cartpole'), ('ppo','models/ppo_cartpole')]:
-        if os.path.exists(path+'.zip') or os.path.exists(path):
-            m = DQN.load(path) if algo=='dqn' else PPO.load(path)
-            env = gym.make('CartPole-v1')
-            lst = []
-            for i in range(20):
-                o, _ = env.reset(seed=i); d = False; r = 0
-                while not d:
-                    a, _ = m.predict(o, deterministic=True); o, rr, t, tr, _ = env.step(int(a)); d = t or tr; r += rr
-                lst.append(r)
-            post.append((algo.upper(), lst))
-            env.close()
-    
-    fig, ax = plt.subplots(figsize=(4.2, 3.0), facecolor=WHITE)
-    ax.set_facecolor(WHITE)
-    nature_clean(ax)
-    
-    # box plot
-    all_data = [pre] + [p[1] for p in post]
-    all_labels = ['Random'] + [p[0] for p in post]
-    
-    # Manual box plots with nature styling
-    bp = ax.boxplot(all_data, patch_artist=True, widths=0.35, tick_labels=all_labels,
-                    medianprops=dict(color='black', linewidth=0.8),
-                    whiskerprops=dict(color=NATURE_GRAY, linewidth=0.6),
-                    capprops=dict(color=NATURE_GRAY, linewidth=0.6),
-                    boxprops=dict(edgecolor=NATURE_GRAY, linewidth=0.6),
-                    flierprops=dict(marker='o', markersize=2, alpha=0.3, color=NATURE_GRAY))
-    
-    box_colors = ['#D0D0D0', '#D0D0D0', ACCENT_BLUE]
-    for patch, c in zip(bp['boxes'], box_colors[:len(all_data)]):
-        patch.set_facecolor(c)
-        patch.set_alpha(0.5)
-    
-    # overlay individual data points
-    for i, d in enumerate(all_data):
-        jitter = np.random.normal(0, 0.03, len(d))
-        ax.scatter(np.ones(len(d))*(i+1) + jitter, d, s=6, color=NATURE_GRAY, alpha=0.4, zorder=5)
-    
-    ax.axhline(y=475, color=ACCENT_BLUE, linestyle='--', linewidth=0.5, alpha=0.6)
-    ax.set_ylabel('Episode reward')
-    ax.set_ylim(0, 550)
-    
-    # add mean labels
-    for i, d in enumerate(all_data):
-        ax.text(i+1, np.mean(d)+25, f'{np.mean(d):.0f}', ha='center', fontsize=7, color=NATURE_GRAY, fontweight='bold')
-    
-    plt.tight_layout(pad=0.3)
-    for fmt in ['png','pdf']:
-        fig.savefig(f'results/fig4_before_after.{fmt}', dpi=300, facecolor=WHITE)
-    plt.close()
-    print('[OK] fig4_before_after')
+    _save(fig, "fig3_method_comparison")
 
-# ========== FIGURE 5: Convergence Speed (Section 3.3) ==========
-def fig5_convergence_speed():
-    with open('results/dqn_train_log.json') as f: dr = json.load(f)['episode_rewards']
-    with open('results/ppo_train_log.json') as f: pr = json.load(f)['episode_rewards']
-    
-    # Steps to first solve
-    dqn_conv = next((i for i,r in enumerate(dr) if r>=475), len(dr))
-    ppo_conv = next((i for i,r in enumerate(pr) if r>=475), len(pr))
-    
-    # Steps to final stable solve (last episode below 475)
-    dqn_final = len(dr) - next((i for i,r in enumerate(reversed(dr)) if r<475), 0)
-    ppo_final = len(pr) - next((i for i,r in enumerate(reversed(pr)) if r<475), 0)
-    
-    fig, ax = plt.subplots(figsize=(4.2, 3.0), facecolor=WHITE)
-    ax.set_facecolor(WHITE)
-    nature_clean(ax)
-    
-    x = np.arange(2)
-    width = 0.28
-    
-    bars1 = ax.bar(x - width/2, [ppo_conv, dqn_conv], width, color='#9E9E9E',
-                   edgecolor=WHITE, linewidth=0.5, label='First solved')
-    bars2 = ax.bar(x + width/2, [ppo_final, dqn_final], width, color=ACCENT_BLUE,
-                   edgecolor=WHITE, linewidth=0.5, alpha=0.7, label='Stable start')
-    
-    for bar in bars1:
-        ax.text(bar.get_x() + bar.get_width()/2, bar.get_height()+30,
-                f'{bar.get_height():.0f}', ha='center', fontsize=7, color=NATURE_GRAY)
-    for bar in bars2:
-        ax.text(bar.get_x() + bar.get_width()/2, bar.get_height()+30,
-                f'{bar.get_height():.0f}', ha='center', fontsize=7, color=ACCENT_BLUE)
-    
-    ax.set_xticks(x)
-    ax.set_xticklabels(['PPO', 'DQN'])
-    ax.set_ylabel('Episode')
-    ax.legend(loc='upper left', fontsize=7)
-    
-    plt.tight_layout(pad=0.3)
-    for fmt in ['png','pdf']:
-        fig.savefig(f'results/fig5_convergence_speed.{fmt}', dpi=300, facecolor=WHITE)
-    plt.close()
-    print('[OK] fig5_convergence_speed')
 
-# ========== FIGURE 6: Training Stability (Section 3.3) ==========
-def fig6_stability():
-    with open('results/dqn_train_log.json') as f: dr = json.load(f)['episode_rewards']
-    with open('results/ppo_train_log.json') as f: pr = json.load(f)['episode_rewards']
-    
-    # Compute rolling mean and std for last 500 episodes
-    def rolling_stats(data, window=100):
-        means = [np.mean(data[max(0,i-window):i]) for i in range(window, len(data)+1)]
-        stds  = [np.std(data[max(0,i-window):i]) for i in range(window, len(data)+1)]
-        return means, stds
-    
-    ppo_means, ppo_stds = rolling_stats(pr)
-    dqn_means, dqn_stds = rolling_stats(dr)
-    
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(6.5, 2.8), facecolor=WHITE)
-    
-    # PPO stability
-    nature_clean(ax1); ax1.set_facecolor(WHITE)
-    x1 = range(100, len(pr)+1)
-    ax1.plot(x1, ppo_means, color=ACCENT_BLUE, linewidth=1.0)
-    ax1.fill_between(x1, np.array(ppo_means)-np.array(ppo_stds),
-                     np.array(ppo_means)+np.array(ppo_stds), color=ACCENT_BLUE, alpha=0.12, linewidth=0)
-    ax1.set_xlabel('Episode'); ax1.set_ylabel('Rolling mean reward')
-    ax1.set_title('PPO', fontsize=9, fontweight='normal', color=NATURE_GRAY, pad=5)
-    ax1.set_ylim(0, 550)
-    ax1.axhline(475, color=NATURE_GRAY, ls='--', lw=0.5, alpha=0.5)
-    
-    # DQN stability
-    nature_clean(ax2); ax2.set_facecolor(WHITE)
-    x2 = range(100, len(dr)+1)
-    ax2.plot(x2, dqn_means, color=ACCENT_RED, linewidth=1.0)
-    ax2.fill_between(x2, np.array(dqn_means)-np.array(dqn_stds),
-                     np.array(dqn_means)+np.array(dqn_stds), color=ACCENT_RED, alpha=0.12, linewidth=0)
-    ax2.set_xlabel('Episode'); ax2.set_ylabel('Rolling mean reward')
-    ax2.set_title('DQN', fontsize=9, fontweight='normal', color=NATURE_GRAY, pad=5)
-    ax2.set_ylim(0, 550)
-    ax2.axhline(475, color=NATURE_GRAY, ls='--', lw=0.5, alpha=0.5)
-    
-    plt.tight_layout(pad=0.5, w_pad=1.0)
-    for fmt in ['png','pdf']:
-        fig.savefig(f'results/fig6_stability.{fmt}', dpi=300, facecolor=WHITE)
-    plt.close()
-    print('[OK] fig6_stability')
+def fig4_training_comparison():
+    """图4：PPO vs DQN 训练全过程对比（对应报告3.1节）"""
+    with open(f"{RESULTS_DIR}/ppo_train_log.json") as f:
+        ppo = json.load(f)
+    with open(f"{RESULTS_DIR}/dqn_train_log.json") as f:
+        dqn = json.load(f)
 
-# ========== FIGURE 7: Sample Efficiency (Section 3.3) ==========
-def fig7_sample_efficiency():
-    with open('results/ppo_train_log.json') as f: pr = json.load(f)['episode_rewards']
-    with open('results/dqn_train_log.json') as f: dr = json.load(f)['episode_rewards']
-    
-    # Cumulative max reward vs. environment steps
-    ppo_steps_total = 50000
-    dqn_steps_total = 150000
-    
-    # Map episode -> environment step (approximate: total_steps / n_episodes linear)
-    ppo_steps_per_ep = ppo_steps_total / len(pr)
-    dqn_steps_per_ep = dqn_steps_total / len(dr)
-    
-    ppo_cummax = np.maximum.accumulate(pr)
-    dqn_cummax = np.maximum.accumulate(dr)
-    
-    fig, ax = plt.subplots(figsize=(4.2, 3.0), facecolor=WHITE)
-    ax.set_facecolor(WHITE)
-    nature_clean(ax)
-    
-    ax.plot(np.arange(1, len(pr)+1) * ppo_steps_per_ep / 1000, ppo_cummax,
-            color=ACCENT_BLUE, linewidth=1.2, label='PPO (50k steps)')
-    ax.plot(np.arange(1, len(dr)+1) * dqn_steps_per_ep / 1000, dqn_cummax,
-            color=ACCENT_RED, linewidth=1.2, label=f'DQN ({dqn_steps_total//1000}k steps)')
-    
-    ax.axhline(475, color=NATURE_GRAY, ls='--', lw=0.5, alpha=0.5)
-    ax.set_xlabel('Environment steps (thousands)')
-    ax.set_ylabel('Best reward so far')
-    ax.legend(fontsize=7)
-    ax.set_ylim(0, 550)
-    
-    plt.tight_layout(pad=0.3)
-    for fmt in ['png','pdf']:
-        fig.savefig(f'results/fig7_sample_efficiency.{fmt}', dpi=300, facecolor=WHITE)
-    plt.close()
-    print('[OK] fig7_sample_efficiency')
+    ppo_rewards = ppo["episode_rewards"]
+    dqn_rewards = dqn["episode_rewards"]
 
-# ========== FIGURE 8: Reward Function Comparison (Section 1.2.2) ==========
-def fig8_reward_comparison():
-    path = 'results/reward_comparison.json'
-    if not os.path.exists(path): 
-        print('[SKIP] fig8_reward_comparison (no data)')
-        return
-    
-    with open(path) as f: data = json.load(f)
-    keys = ['default', 'custom_v1', 'custom_v2']
-    labels = [data[k]['label'] for k in keys if k in data]
-    means  = [data[k].get('mean_eval', 0) for k in keys if k in data]
-    
-    if not means: return
-    
-    # Extract training curves if available
-    curves = {}
-    for k in keys:
-        if k in data and 'train_curve' in data[k]:
-            curves[k] = data[k]['train_curve']
-    
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(6.5, 2.8), facecolor=WHITE)
-    
-    # Bar chart
-    nature_clean(ax1); ax1.set_facecolor(WHITE)
-    x = np.arange(len(labels))
-    colors_bar = ['#9E9E9E', '#B0B0B0', ACCENT_BLUE]
-    bars = ax1.bar(x, means, 0.45, color=colors_bar[:len(labels)], edgecolor=WHITE, linewidth=0.5)
-    for bar, m in zip(bars, means):
-        ax1.text(bar.get_x() + bar.get_width()/2, bar.get_height()+10,
-                f'{m:.0f}', ha='center', fontsize=7, color=NATURE_GRAY)
-    ax1.axhline(475, color=NATURE_GRAY, ls='--', lw=0.5, alpha=0.5)
-    ax1.set_xticks(x)
-    ax1.set_xticklabels(labels, fontsize=6, rotation=15, ha='right')
-    ax1.set_ylabel('Mean evaluation reward')
-    ax1.set_ylim(0, 550)
-    
-    # Training curves
-    if curves:
-        nature_clean(ax2); ax2.set_facecolor(WHITE)
-        for i, (k, label) in enumerate(zip(keys, labels)):
-            if k in curves:
-                r = curves[k]
-                sm = smooth(r, 10) if len(r) > 10 else r
-                ax2.plot(range(len(sm)), sm, linewidth=0.8, label=label,
-                        color=[ACCENT_BLUE, ACCENT_RED, '#9E9E9E'][i])
-        ax2.set_xlabel('Episode')
-        ax2.set_ylabel('Smoothed reward')
-        ax2.legend(fontsize=6)
-        ax2.set_ylim(0, 550)
-    
-    plt.tight_layout(pad=0.5, w_pad=1.0)
-    for fmt in ['png','pdf']:
-        fig.savefig(f'results/fig8_reward_comparison.{fmt}', dpi=300, facecolor=WHITE)
-    plt.close()
-    print('[OK] fig8_reward_comparison')
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(6.5, 3), sharey=True)
 
-if __name__ == '__main__':
-    print('Generating Nature-style figures...\n')
+    # ── PPO ──
+    ppo_sm = _smooth(ppo_rewards, 10)
+    ax1.scatter(range(1, len(ppo_rewards) + 1), ppo_rewards,
+                s=1, color=C_BLUE, alpha=0.2, linewidth=0)
+    ax1.plot(range(10, len(ppo_rewards) + 1), ppo_sm,
+             color=C_BLUE, linewidth=1.2)
+    ax1.axhline(y=475, color=C_GRAY, linestyle="--", linewidth=0.6, alpha=0.5)
+    ax1.set_xlabel("Episode", fontsize=7.5)
+    ax1.set_ylabel("Reward", fontsize=7.5)
+    ax1.set_title("PPO", fontsize=8, fontweight="bold", pad=5)
+    ax1.set_ylim(-50, 550)
+
+    # ── DQN ──
+    dqn_sm = _smooth(dqn_rewards, 50)
+    ax2.scatter(range(1, len(dqn_rewards) + 1), dqn_rewards,
+                s=0.3, color=C_RED, alpha=0.08, linewidth=0)
+    ax2.plot(range(50, len(dqn_rewards) + 1), dqn_sm,
+             color=C_RED, linewidth=1.0)
+    ax2.axhline(y=475, color=C_GRAY, linestyle="--", linewidth=0.6, alpha=0.5)
+    ax2.set_xlabel("Episode", fontsize=7.5)
+    ax2.set_title("DQN (catastrophic forgetting)", fontsize=8,
+                  fontweight="bold", pad=5, color=C_RED)
+    ax2.set_ylim(-50, 550)
+
+    fig.suptitle("Figure 4 | Training process comparison",
+                 fontsize=9, fontweight="bold", y=1.04)
+
+    _save(fig, "fig4_training_comparison")
+
+
+def fig5_before_after():
+    """图5：训练前后控制效果对比（箱线图，对应报告3.2节）"""
+    with open(f"{RESULTS_DIR}/rl_eval.json") as f:
+        rl = json.load(f)
+
+    # 随机策略数据（从baseline读）
+    with open(f"{RESULTS_DIR}/baseline_comparison.json") as f:
+        bl = json.load(f)
+
+    random_rewards = bl["random"]["rewards"][:20]
+    dqn_rewards = rl["dqn"]["rewards"]
+    ppo_rewards = rl["ppo"]["rewards"]
+
+    fig, ax = plt.subplots(figsize=(3.5, 3))
+
+    data = [random_rewards, dqn_rewards, ppo_rewards]
+    labels = ["Random\n(before)", "DQN\n(after)", "PPO\n(after)"]
+    colors = [C_GRAY, C_RED, C_BLUE]
+
+    bp = ax.boxplot(data, tick_labels=labels, patch_artist=True, widths=0.45,
+                    medianprops=dict(color="white", linewidth=1.2),
+                    whiskerprops=dict(color=C_BLACK, linewidth=0.6),
+                    capprops=dict(color=C_BLACK, linewidth=0.6),
+                    flierprops=dict(marker="o", markersize=3,
+                                    markerfacecolor=C_GRAY, alpha=0.5))
+
+    for patch, color in zip(bp["boxes"], colors):
+        patch.set_facecolor(color)
+        patch.set_alpha(0.7)
+
+    ax.axhline(y=475, color=C_GRAY, linestyle="--", linewidth=0.7, alpha=0.5)
+    ax.text(2.8, 482, "Solved (475)", fontsize=6.5, color=C_GRAY, fontstyle="italic")
+
+    ax.set_ylabel("Reward", fontsize=8)
+    ax.set_title("Figure 5 | Before vs after training",
+                 fontsize=9, fontweight="bold", pad=8)
+
+    _save(fig, "fig5_before_after")
+
+
+if __name__ == "__main__":
+    print("Generating Nature-style figures...\n")
     fig1_ppo_training()
     fig2_dqn_training()
     fig3_method_comparison()
-    fig4_before_after()
-    fig5_convergence_speed()
-    fig6_stability()
-    fig7_sample_efficiency()
-    fig8_reward_comparison()
-    print('\nAll Nature-style figures generated!')
+    fig4_training_comparison()
+    fig5_before_after()
+    print("\nAll figures generated in", RESULTS_DIR)

@@ -70,7 +70,7 @@ DQN训练300,000步（7,711回合），经历完整的学习-遗忘过程（图1
 
 **DQN评估（20回合）：2.0 ± 1.1，满分率0%**
 
-![DQN与PPO训练曲线](results_task/training_curves.png)
+![DQN与PPO训练曲线](results_task/fig1_ppo_training.png)
 *图1：DQN与PPO训练曲线。PPO稳定收敛至满分；DQN经历完整的学习-遗忘过程，在失败惩罚下遗忘更严重。*
 
 ### 2.4 传统控制对比
@@ -95,7 +95,7 @@ DQN训练300,000步（7,711回合），经历完整的学习-遗忘过程（图1
 | **DQN**（30万步） | **2.0** | 1.1 | 0% |
 | **PPO**（10万步） | **500.0** | 0.0 | **100%** |
 
-![控制方法对比](results_task/comparison.png)
+![控制方法对比](results_task/fig3_method_comparison.png)
 *图2：五种控制方法平均奖励对比。PPO满分500，DQN因灾难性遗忘仅2步。*
 
 ### 3.2 灾难性遗忘分析
