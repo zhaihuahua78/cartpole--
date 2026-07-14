@@ -136,7 +136,16 @@ PPO 学习率对比（30,000 步训练）：
 | n_steps=256, lr=3e-4 | 199.6 | 500 | 3 | 349.3 |
 | n_steps=5, lr=3e-4 | 41.2 | 500 | 3 | 120.2 |
 
-**关键发现：** n_steps=64 最优——过小（5）更新太频繁利用率低，过大（256/512）更新频率不足。综合后100均值和求解次数，**n_steps=64, lr=5e-4 为最优配置。**
+**关键发现：** n_steps=64 最优
+
+![PPO学习率对比](results_task/fig_s1_ppo_lr.png)
+*Figure S1：PPO学习率对比。lr=3e-4在收敛速度和稳定性之间取得最佳平衡。*
+
+![A2C n_steps对比](results_task/fig_s2_a2c_nsteps.png)
+*Figure S2：A2C不同n_steps配置对比。n_steps=64最优。*
+
+![默认vs最优A2C](results_task/fig_s3_a2c_default_vs_optimal.png)
+*Figure S3：A2C默认配置与最优配置对比。优化后后100均值从41.2提升至433.5（+952%）。*——过小（5）更新太频繁利用率低，过大（256/512）更新频率不足。综合后100均值和求解次数，**n_steps=64, lr=5e-4 为最优配置。**
 
 ### 2.4 扩展对比（传统控制方法）
 
@@ -269,7 +278,21 @@ PPO 学习率对比（30,000 步训练）：
 
 通过本次实验，我深入理解了强化学习在自动控制领域中的实际应用。掌握了 PPO 和 A2C 两种主流 RL 算法的核心原理和实现差异——PPO 的裁剪机制如何保证稳定性，A2C 的演员-评论家架构如何降低方差。理解了超参数调优对 RL 算法性能的决定性影响——A2C 从默认参数（后100均值 41.2）到优化参数（后100均值 464.5）的性能飞跃是最好证明。认识到传统控制方法与 RL 方法的本质差异：前者依赖精确建模或人工规则，后者通过与环境试错交互自主学习策略。体会到了科学对比的重要性——多维度指标比单一均值能更全面地评估算法性能。
 
-**代码仓库：** https://github.com/zhaihuahua78/cartpole--
+## 5 附录
+
+本项目代码已开源至GitHub，可从以下链接获取完整代码：
+
+https://github.com/zhaihuahua78/cartpole--
+
+代码仓库包含：
+- `src/task_env.py`：符合任务描述的CartPole自定义环境
+- `train_task.py`：完整训练、评估和可视化脚本
+- `nature_figures.py`：Nature期刊风格图表生成脚本
+- `param_figures.py`：参数验证图表生成脚本
+- `models_task/`：训练好的PPO和A2C模型文件
+- `results_task/`：所有实验数据、训练日志和图表
+
+使用前请安装依赖：`pip install -r requirements.txt`
 
 ---
 
