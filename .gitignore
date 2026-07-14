@@ -31,3 +31,15 @@ Thumbs.db
 
 # Obsidian配置
 .obsidian/
+
+# LaTeX 编译产物
+*.aux
+*.out
+*.log
+*.synctex.gz
+*.synctex(busy)
+*.toc
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
