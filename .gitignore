@@ -32,6 +32,11 @@ Thumbs.db
 # Obsidian配置
 .obsidian/
 
+# OCR临时文件
+_ocr_output.txt
+_screenshot.png
+_screenshot_thumb.png
+
 # LaTeX 编译产物
 *.aux
 *.out
