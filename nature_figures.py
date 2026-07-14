@@ -86,7 +86,7 @@ def fig1_ppo_training():
 
     ax.set_xlabel("Episode", fontsize=8)
     ax.set_ylabel("Reward", fontsize=8)
-    ax.set_title("Figure 1 | PPO training curve", fontsize=9, fontweight="bold", pad=8)
+    ax.set_title("PPO training curve", fontsize=9, fontweight="bold", pad=8)
     ax.set_xlim(0, len(rewards)+5); ax.set_ylim(-50, 550)
     ax.legend(loc="lower right")
     _save(fig, "fig1_ppo_training")
@@ -137,7 +137,7 @@ def fig2_a2c_training():
 
     ax.set_xlabel("Episode", fontsize=8)
     ax.set_ylabel("Reward", fontsize=8)
-    ax.set_title("Figure 2 | A2C training curve", fontsize=9, fontweight="bold", pad=8)
+    ax.set_title("A2C training curve", fontsize=9, fontweight="bold", pad=8)
     ax.set_xlim(-50, len(rewards)+50); ax.set_ylim(-50, 550)
     ax.legend(loc="upper left")
     _save(fig, "fig2_a2c_training")
@@ -183,7 +183,7 @@ def fig3_method_comparison():
     ax.text(3.8, 482, "Solved (475)", fontsize=6.5, color=C_GRAY, fontstyle="italic")
     ax.set_xticks(x); ax.set_xticklabels(labels, fontsize=7)
     ax.set_ylabel("Mean reward", fontsize=8)
-    ax.set_title("Figure 3 | Control method comparison",
+    ax.set_title("Control method comparison",
                  fontsize=9, fontweight="bold", pad=8)
     ax.set_ylim(0, 580)
     _save(fig, "fig3_method_comparison")
@@ -225,7 +225,7 @@ def fig4_training_comparison():
     ax2.set_xlabel("Episode", fontsize=7.5)
     ax2.set_title("A2C", fontsize=8, fontweight="bold", pad=5); ax2.set_ylim(-50, 550)
 
-    fig.suptitle("Figure 4 | Training process comparison",
+    fig.suptitle("Training process comparison",
                  fontsize=9, fontweight="bold", y=1.04)
     _save(fig, "fig4_training_comparison")
 
@@ -260,7 +260,7 @@ def fig5_before_after():
     ax.axhline(y=475, color=C_GRAY, linestyle="--", linewidth=0.7, alpha=0.5)
     ax.text(2.8, 482, "Solved (475)", fontsize=6.5, color=C_GRAY, fontstyle="italic")
     ax.set_ylabel("Reward", fontsize=8)
-    ax.set_title("Figure 5 | Before vs after training",
+    ax.set_title("Before vs after training",
                  fontsize=9, fontweight="bold", pad=8)
     _save(fig, "fig5_before_after")
 
@@ -321,7 +321,7 @@ def fig6_metrics_panel():
     ax.set_title("(d) Episode length", fontsize=8, fontweight="bold")
     ax.legend(loc="lower right")
 
-    fig.suptitle("Figure 6 | Multi-metric training analysis",
+    fig.suptitle("Multi-metric training analysis",
                  fontsize=9, fontweight="bold", y=1.02)
     plt.tight_layout()
     _save(fig, "fig6_metrics_panel")

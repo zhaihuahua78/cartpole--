@@ -30,7 +30,7 @@ bars=ax.bar(labels,vals,width=0.5,color=cols,edgecolor=C_BLACK,linewidth=0.5,alp
 for b,v in zip(bars,vals):
     ax.text(b.get_x()+b.get_width()/2,b.get_height()+5,str(v),ha="center",va="bottom",fontsize=8,fontweight="bold",color=C_BLACK)
 ax.set_ylabel("Last 50 mean reward",fontsize=8)
-ax.set_title("Figure S1 | PPO learning rate effect",fontsize=9,fontweight="bold",pad=8)
+ax.set_title("PPO learning rate effect",fontsize=9,fontweight="bold",pad=8)
 ax.set_ylim(0,480)
 sv(fig,"fig_s1_ppo_lr")
 
@@ -45,7 +45,7 @@ for b,v in zip(bars,vals):
     ax.text(b.get_x()+b.get_width()/2,b.get_height()+5,f"{v:.0f}",ha="center",va="bottom",fontsize=8,fontweight="bold",color=C_BLACK)
 ax.set_xlabel("n_steps (rollout length)",fontsize=8)
 ax.set_ylabel("Last 100 mean reward",fontsize=8)
-ax.set_title("Figure S2 | A2C n_steps effect",fontsize=9,fontweight="bold",pad=8)
+ax.set_title("A2C n_steps effect",fontsize=9,fontweight="bold",pad=8)
 ax.set_ylim(0,550)
 sv(fig,"fig_s2_a2c_nsteps")
 
@@ -62,7 +62,7 @@ ax.plot([0,0,1,1],[v0+45,v0+55,v0+55,v1+10],color=C_BLACK,linewidth=0.6)
 pct = int((v1-v0)/v0*100)
 ax.text(0.5,v0+60,f"+{int(v1-v0)} ({pct}%)",ha="center",va="bottom",fontsize=7,fontweight="bold",color=C_GREEN)
 ax.set_ylabel("Mean reward",fontsize=8)
-ax.set_title("Figure S3 | Default vs optimal A2C",fontsize=9,fontweight="bold",pad=8)
+ax.set_title("Default vs optimal A2C",fontsize=9,fontweight="bold",pad=8)
 ax.set_ylim(0,550)
 sv(fig,"fig_s3_a2c_default_vs_optimal")
 
